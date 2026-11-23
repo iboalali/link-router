@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Link Router</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 12px 14px;
+      width: 280px;
+      color: #1f2328;
+      background: #ffffff;
+    }
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      margin: 0 0 8px 0;
+    }
+    h1 img {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .status {
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      background: #f3f4f6;
+    }
+    .status.ok {
+      background: #e6f4ea;
+      color: #137333;
+    }
+    .status.err {
+      background: #fce8e6;
+      color: #c5221f;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    select {
+      width: 100%;
+      padding: 6px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #d0d7de;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    button {
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid #d0d7de;
+      background: #f6f8fa;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    button.primary {
+      background: #1f6feb;
+      color: #ffffff;
+      border-color: #1f6feb;
+    }
+    .hint {
+      font-size: 11px;
+      color: #57606a;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1><img src="icons/icon-32.png" alt="" />Link Router</h1>
+  <div id="status" class="status">Connecting...</div>
+
+  <label for="profile-select">This Chrome profile</label>
+  <select id="profile-select">
+    <option value="">Not set</option>
+  </select>
+
+  <div class="row">
+    <span>Pause link routing</span>
+    <input id="pause-toggle" type="checkbox" />
+  </div>
+
+  <button id="open-manager" class="primary">Open Link Router Manager</button>
+  <button id="refresh-btn">Refresh Rules</button>
+
+  <div class="hint">Hold Alt while clicking a link to bypass routing once.</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

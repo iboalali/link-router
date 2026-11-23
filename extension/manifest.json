@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Link Router",
+  "version": "0.1.0",
+  "description": "Route clicked links to the right Chrome profile or Linux app via Link Router.",
+  "permissions": [
+    "nativeMessaging",
+    "storage",
+    "tabs",
+    "webNavigation",
+    "identity",
+    "identity.email",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "matcher.js",
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_title": "Link Router",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}
