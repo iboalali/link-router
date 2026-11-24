@@ -62,7 +62,7 @@ To install the `.desktop` file and icon without changing your default browser ye
 
 1. Open `chrome://extensions` in each Chrome profile where you want links intercepted.
 2. Enable **Developer mode** and click **Load unpacked**, selecting `extension/`.
-3. Copy the unpacked extension ID and register the Native Messaging host:
+3. Copy the unpacked extension ID and register the Native Messaging host. Each Chrome profile can show a different ID, so run this once per profile (or pass `--extension-id` several times). IDs already registered stay allowed:
 
 ```bash
 ./target/release/link-router install --extension-id <EXTENSION_ID>

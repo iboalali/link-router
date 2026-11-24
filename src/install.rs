@@ -13,7 +13,7 @@ const ICON_SVG: &str = include_str!("../assets/link-router.svg");
 #[derive(Debug, Clone, Default)]
 pub struct InstallOptions {
     pub register_default: bool,
-    pub extension_id: Option<String>,
+    pub extension_ids: Vec<String>,
     pub binary_path: Option<PathBuf>,
 }
 
@@ -122,30 +122,54 @@ pub fn install(opts: &InstallOptions) -> Result<Vec<String>, String> {
         actions.push("Registered link-router.desktop for http and https".to_string());
     }
 
-    if let Some(ext_id) = &opts.extension_id {
+    if !opts.extension_ids.is_empty() {
         let host_path = native_host_manifest_path();
         if let Some(parent) = host_path.parent() {
             fs::create_dir_all(parent)
                 .map_err(|e| format!("failed to create {}: {}", parent.display(), e))?;
         }
         let wrapper_path = write_native_host_wrapper(&bin)?;
+        // Each Chrome profile can give the unpacked extension its own ID, so IDs
+        // registered by earlier installs stay allowed.
+        let mut origins = existing_allowed_origins(&host_path);
+        for id in &opts.extension_ids {
+            let origin = format!("chrome-extension://{}/", id.trim());
+            if !origins.contains(&origin) {
+                origins.push(origin);
+            }
+        }
         let manifest = json!({
             "name": NATIVE_HOST_NAME,
             "description": "Link Router Chrome Native Messaging host",
             "path": wrapper_path.to_string_lossy(),
             "type": "stdio",
-            "allowed_origins": [
-                format!("chrome-extension://{}/", ext_id.trim())
-            ]
+            "allowed_origins": origins
         });
         let rendered = serde_json::to_string_pretty(&manifest)
             .map_err(|e| format!("failed to serialize native host manifest: {}", e))?;
         fs::write(&host_path, rendered)
             .map_err(|e| format!("failed to write {}: {}", host_path.display(), e))?;
-        actions.push(format!("Wrote {}", host_path.display()));
+        actions.push(format!(
+            "Wrote {} (allowed origins: {})",
+            host_path.display(),
+            origins.join(", ")
+        ));
     }
 
     Ok(actions)
+}
+
+fn existing_allowed_origins(host_path: &Path) -> Vec<String> {
+    fs::read_to_string(host_path)
+        .ok()
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+        .and_then(|v| v.get("allowed_origins").and_then(|o| o.as_array()).cloned())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|o| o.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn write_native_host_wrapper(bin: &Path) -> Result<PathBuf, String> {

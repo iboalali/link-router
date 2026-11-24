@@ -58,9 +58,10 @@ enum Commands {
         /// Also register link-router.desktop as the default http/https handler
         #[arg(long)]
         register_default: bool,
-        /// Chrome unpacked extension ID to allow in NativeMessagingHosts
-        #[arg(long)]
-        extension_id: Option<String>,
+        /// Chrome extension ID to allow in NativeMessagingHosts (repeatable; IDs already
+        /// allowed stay allowed)
+        #[arg(long = "extension-id")]
+        extension_ids: Vec<String>,
         /// Override binary path written to desktop/native-host files
         #[arg(long)]
         binary_path: Option<PathBuf>,
@@ -93,11 +94,11 @@ fn main() -> ExitCode {
         Some(Commands::Targets { json }) => cmd_targets(json),
         Some(Commands::Install {
             register_default,
-            extension_id,
+            extension_ids,
             binary_path,
         }) => cmd_install(InstallOptions {
             register_default,
-            extension_id,
+            extension_ids,
             binary_path,
         }),
         Some(Commands::Uninstall) => cmd_uninstall(),
