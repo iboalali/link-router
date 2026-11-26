@@ -48,6 +48,13 @@ fn data_home() -> PathBuf {
     PathBuf::from(home).join(".local/share")
 }
 
+/// The `target/` directory is disposable build output, so desktop and native-host entries
+/// point at a copy here instead.
+pub fn installed_binary_path() -> PathBuf {
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    PathBuf::from(home).join(".local/bin/link-router")
+}
+
 pub fn native_host_manifest_path() -> PathBuf {
     if let Ok(xdg_config) = std::env::var("XDG_CONFIG_HOME") {
         if !xdg_config.trim().is_empty() {
@@ -63,13 +70,20 @@ pub fn native_host_manifest_path() -> PathBuf {
 }
 
 pub fn install(opts: &InstallOptions) -> Result<Vec<String>, String> {
+    let mut actions = Vec::new();
     let bin = match &opts.binary_path {
         Some(p) => p.clone(),
-        None => std::env::current_exe()
-            .map_err(|e| format!("failed to locate current binary: {}", e))?,
+        None => {
+            let current = std::env::current_exe()
+                .map_err(|e| format!("failed to locate current binary: {}", e))?;
+            let installed = installed_binary_path();
+            if copy_binary(&current, &installed)? {
+                actions.push(format!("Copied {} to {}", current.display(), installed.display()));
+            }
+            installed
+        }
     };
     let bin_str = bin.to_string_lossy();
-    let mut actions = Vec::new();
 
     let icon_path = icon_file_path();
     if let Some(parent) = icon_path.parent() {
@@ -122,8 +136,13 @@ pub fn install(opts: &InstallOptions) -> Result<Vec<String>, String> {
         actions.push("Registered link-router.desktop for http and https".to_string());
     }
 
+    let host_path = native_host_manifest_path();
+    if opts.extension_ids.is_empty() && host_path.exists() {
+        let wrapper_path = write_native_host_wrapper(&bin)?;
+        actions.push(format!("Wrote {}", wrapper_path.display()));
+    }
+
     if !opts.extension_ids.is_empty() {
-        let host_path = native_host_manifest_path();
         if let Some(parent) = host_path.parent() {
             fs::create_dir_all(parent)
                 .map_err(|e| format!("failed to create {}: {}", parent.display(), e))?;
@@ -157,6 +176,30 @@ pub fn install(opts: &InstallOptions) -> Result<Vec<String>, String> {
     }
 
     Ok(actions)
+}
+
+/// Returns false when `from` already is `to`. The copy goes through a temporary file and a
+/// rename, so a running `link-router` at `to` never sees a half-written binary.
+fn copy_binary(from: &Path, to: &Path) -> Result<bool, String> {
+    if fs::canonicalize(from).ok() == fs::canonicalize(to).ok() && to.exists() {
+        return Ok(false);
+    }
+    let dir = to
+        .parent()
+        .ok_or_else(|| format!("{} has no parent directory", to.display()))?;
+    fs::create_dir_all(dir).map_err(|e| format!("failed to create {}: {}", dir.display(), e))?;
+    let tmp = dir.join(".link-router.tmp");
+    fs::copy(from, &tmp)
+        .map_err(|e| format!("failed to copy {} to {}: {}", from.display(), tmp.display(), e))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&tmp, fs::Permissions::from_mode(0o755))
+            .map_err(|e| format!("failed to chmod {}: {}", tmp.display(), e))?;
+    }
+    fs::rename(&tmp, to)
+        .map_err(|e| format!("failed to move {} to {}: {}", tmp.display(), to.display(), e))?;
+    Ok(true)
 }
 
 fn existing_allowed_origins(host_path: &Path) -> Vec<String> {
@@ -238,6 +281,13 @@ pub fn uninstall() -> Result<Vec<String>, String> {
     let wrapper = crate::config::config_dir().join("native-host.sh");
     if wrapper.exists() {
         let _ = fs::remove_file(&wrapper);
+    }
+
+    let installed = installed_binary_path();
+    if installed.exists() {
+        fs::remove_file(&installed)
+            .map_err(|e| format!("failed to remove {}: {}", installed.display(), e))?;
+        actions.push(format!("Removed {}", installed.display()));
     }
 
     Ok(actions)

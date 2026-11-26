@@ -10,19 +10,29 @@ Requires Rust, GTK 4 (`>= 4.14`), and libadwaita (`>= 1.6`).
 cargo build --release
 ```
 
+## Install
+
+```bash
+./target/release/link-router install
+```
+
+This copies the binary to `~/.local/bin/link-router` and writes the `.desktop` file and icon. The desktop entry and the Chrome Native Messaging host run that copy, so `cargo clean` does not break routing. After a rebuild, run `./target/release/link-router install` again to update the copy. Pass `--binary-path <PATH>` to register a binary in place without copying it.
+
+The commands below assume `~/.local/bin` is on your `PATH`.
+
 ## Quick start
 
 1. Check discovered targets and test a URL without changing system defaults:
 
 ```bash
-./target/release/link-router targets
-./target/release/link-router test https://acme.atlassian.net/browse/TM-123
+link-router targets
+link-router test https://acme.atlassian.net/browse/TM-123
 ```
 
 2. Open the GTK4 manager to configure your fallback browser and rules:
 
 ```bash
-./target/release/link-router manager
+link-router manager
 ```
 
 3. Example `~/.config/link-router/config.toml` for routing work Jira URLs to a specific Chrome profile:
@@ -49,13 +59,7 @@ target = "chrome:Profile 1"
 4. Register as the desktop `http`/`https` handler:
 
 ```bash
-./target/release/link-router install --register-default
-```
-
-To install the `.desktop` file and icon without changing your default browser yet:
-
-```bash
-./target/release/link-router install
+link-router install --register-default
 ```
 
 ## Chrome extension setup
@@ -65,7 +69,7 @@ To install the `.desktop` file and icon without changing your default browser ye
 3. Copy the unpacked extension ID and register the Native Messaging host. Each Chrome profile can show a different ID, so run this once per profile (or pass `--extension-id` several times). IDs already registered stay allowed:
 
 ```bash
-./target/release/link-router install --extension-id <EXTENSION_ID>
+link-router install --extension-id <EXTENSION_ID>
 ```
 
 4. Click the Link Router toolbar icon in each Chrome profile and select which profile that window belongs to (or let it auto-match by signed-in email).
@@ -74,7 +78,7 @@ To install the `.desktop` file and icon without changing your default browser ye
 ## Uninstall
 
 ```bash
-./target/release/link-router uninstall
+link-router uninstall
 ```
 
 ## License

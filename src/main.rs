@@ -62,7 +62,8 @@ enum Commands {
         /// allowed stay allowed)
         #[arg(long = "extension-id")]
         extension_ids: Vec<String>,
-        /// Override binary path written to desktop/native-host files
+        /// Register this binary as-is instead of copying the running one to
+        /// ~/.local/bin/link-router
         #[arg(long)]
         binary_path: Option<PathBuf>,
     },
